@@ -19,7 +19,7 @@ RECTANGLE_HEIGHT = (HEIGHT // 5) * 2
 CORNERS = ((34, 261), (1393, 992))
 artwork_size = [b - a for a, b in zip(*CORNERS)]
 
-title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
+title_font = ImageFont.truetype(str(SOURCES_PATH / "MADE Bruno.otf"), 170)
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
