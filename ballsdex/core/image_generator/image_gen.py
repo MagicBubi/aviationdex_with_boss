@@ -31,7 +31,7 @@ artwork_size = [b - a for a, b in zip(*CORNERS)]
 # image viewer. There are options available to specify the ball or the special background,
 # use the "--help" flag to view all options.
 
-title_font = ImageFont.truetype(str(SOURCES_PATH / "ArsenicaTrial-Extrabold.ttf"), 170)
+title_font = ImageFont.truetype(str(SOURCES_PATH / "MADE Bruno.otf"), 170)
 capacity_name_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 110)
 capacity_description_font = ImageFont.truetype(str(SOURCES_PATH / "OpenSans-Semibold.ttf"), 75)
 stats_font = ImageFont.truetype(str(SOURCES_PATH / "Bobby Jones Soft.otf"), 130)
@@ -77,7 +77,7 @@ def draw_card(
         stroke_fill=(0, 0, 0, 255),
     )
 
-    cap_name = textwrap.wrap(f"Ability: {ball.capacity_name}", width=26)
+    cap_name = textwrap.wrap(ball.capacity_name, width=26)
 
     for i, line in enumerate(cap_name):
         draw.text(
