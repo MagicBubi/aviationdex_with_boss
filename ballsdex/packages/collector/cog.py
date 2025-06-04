@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 # Define rarity range-based goals
 RARITY_COLLECTION_GOALS = [
-    ((0.0010, 0.0022), 3),          # Secret
+    ((0.0009, 0.0022), 3),          # Secret
     ((0.0022, 0.05), 8),            # TX
     ((0.05, 0.06), 15),             # T1
     ((0.06, 0.065), 20),            # T2
