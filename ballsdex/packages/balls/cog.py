@@ -686,6 +686,59 @@ class Balls(commands.GroupCog, group_name=settings.players_group_cog_name):
         )
 
     @app_commands.command()
+    @app_commands.checks.cooldown(1, 10, key=lambda i: i.user.id)
+    async def leaderboard(self, interaction: discord.Interaction):
+        """
+        View the top 10 players - Created by newzac
+        """
+        players = await Player.annotate(balls_count=Count("balls")).order_by("-balls_count")
+
+        for i in range(len(players)):
+            if str(players[i]) == "1214667728686678076":
+                players.pop(i)
+                break
+
+        UserID = str(interaction.user.id)
+        UserRanking = 0
+
+        for i in range(len(players)):
+            if str(players[i]) == UserID:
+                UserRanking += i
+                break
+
+        player1 = '{:,}'.format(players[0].balls_count)
+        player2 = '{:,}'.format(players[1].balls_count)
+        player3 = '{:,}'.format(players[2].balls_count)
+        player4 = '{:,}'.format(players[3].balls_count)
+        player5 = '{:,}'.format(players[4].balls_count)
+        player6 = '{:,}'.format(players[5].balls_count)
+        player7 = '{:,}'.format(players[6].balls_count)
+        player8 = '{:,}'.format(players[7].balls_count)
+        player9 = '{:,}'.format(players[8].balls_count)
+        player10 = '{:,}'.format(players[9].balls_count)
+
+        ballstonextrank = players[UserRanking-1].balls_count - players[UserRanking].balls_count
+
+        if ballstonextrank < 0:
+            howfar = ""
+        else:
+            howfar = "*To reach the next rank, you will need " + str(ballstonextrank) + f" more {settings.collectible_name}s!*"
+
+        embed = discord.Embed(title="🏆 Leaderboard 🏆", description="", color=discord.Colour.blurple())
+
+        embed.add_field(name="Top Players", value=f"**#1:** <@{players[0]}>\n ● {player1} {settings.collectible_name}s\n**#2:** <@{players[1]}>\n ● {player2} {settings.collectible_name}s\n**#3:** <@{players[2]}>\n ● {player3} {settings.collectible_name}s\n**#4:** <@{players[3]}>\n ● {player4} {settings.collectible_name}s\n**#5:** <@{players[4]}>\n ● {player5} {settings.collectible_name}s\n**#6:** <@{players[5]}>\n ● {player6} {settings.collectible_name}s\n**#7:** <@{players[6]}>\n ● {player7} {settings.collectible_name}s\n**#8:** <@{players[7]}>\n ● {player8} {settings.collectible_name}s\n**#9:** <@{players[8]}>\n ● {player9} {settings.collectible_name}s\n**#10:** <@{players[9]}>\n ● {player10} {settings.collectible_name}s", inline=False)
+
+        embed.add_field(name="", value=f"*You are rank **#{str(UserRanking+1)}** out of {str('{:,}'.format(len(players)))} players!*\n" + howfar, inline=False)
+
+        embed.set_footer(text = "(Top players you don't share servers with will display their ID only)")
+
+        await interaction.response.send_message(
+            embed=embed,
+            ephemeral = False
+        )
+        return
+
+    @app_commands.command()
     @app_commands.checks.cooldown(1, 60, key=lambda i: i.user.id)
     async def duplicate(
         self,
