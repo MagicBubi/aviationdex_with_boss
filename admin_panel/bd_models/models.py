@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Iterable, cast
+from typing import Iterable, cast
 
 from django.contrib import admin
 from django.core.cache import cache
@@ -294,17 +294,15 @@ class BallInstance(models.Model):
         blank=True, null=True, help_text="If the instance was locked for a trade and when"
     )
     spawned_time = models.DateTimeField(blank=True, null=True)
-
-    def __getattribute__(self, name: str) -> Any:
-        if name == "ball":
-            balls = cast(list[Ball], cache.get_or_set("balls", Ball.objects.all(), timeout=30))
-            for ball in balls:
-                if ball.pk == self.ball_id:
-                    return ball
-        return super().__getattribute__(name)
+    deleted = models.BooleanField(
+        default=False,
+        help_text="Whether this instance was deleted or not.",
+    )
 
     def __str__(self) -> str:
         text = ""
+        if self.deleted:
+            text += "\N{NO ENTRY SIGN}"
         if self.locked and self.locked > now() - timedelta(minutes=30):
             text += "🔒"
         if self.favorite:
@@ -332,6 +330,7 @@ class BallInstance(models.Model):
         db_table = "ballinstance"
         unique_together = (("player", "id"),)
         verbose_name = f"{settings.collectible_name} instance"
+        indexes = [models.Index(fields=("deleted",))]
 
 
 class BlacklistedID(models.Model):

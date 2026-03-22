@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, List, Union
 
 import discord
 
@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 def is_staff(interaction: discord.Interaction["BallsDexBot"]) -> bool:
     if interaction.user.id in interaction.client.owner_ids:
         return True
+    if settings.admin_channel_ids:
+        if interaction.channel_id not in settings.admin_channel_ids:
+            return False
     if interaction.guild and interaction.guild.id in settings.admin_guild_ids:
         roles = settings.admin_role_ids + settings.root_role_ids
         if any(role.id in roles for role in interaction.user.roles):  # type: ignore
@@ -60,3 +63,11 @@ async def inventory_privacy(
             await interaction.followup.send("This user is not in the server.", ephemeral=True)
             return False
     return True
+
+
+async def can_mention(players: List[Player]) -> discord.AllowedMentions:
+    can_mention = []
+    for player in players:
+        if player.can_be_mentioned:
+            can_mention.append(discord.Object(id=player.discord_id))
+    return discord.AllowedMentions(users=can_mention, roles=False, everyone=False)

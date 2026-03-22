@@ -241,6 +241,7 @@ class RemoveWSBehindMsg(logging.Filter):
 
 async def init_tortoise(db_url: str, *, skip_migrations: bool = False):
     log.debug(f"Database URL: {db_url}")
+    TORTOISE_ORM["apps"]["models"]["models"].extend(settings.tortoise_models)
     await Tortoise.init(config=TORTOISE_ORM)
 
 
@@ -276,15 +277,15 @@ def main():
         read_settings(cli_flags.config_file)
     except YAMLError:
         print(
-            "[red]Your YAML is invalid!\nError parsing config file, please check your config and"
-            "try again[/red]"
+            "[red]Your YAML is invalid!\nError parsing config file, please check your config"
+            " and try again[/red]"
         )
         time.sleep(1)
         sys.exit(0)
     except KeyError as missing_key:
         print(
-            f"[red]Config file missing key {missing_key}!\nError parsing config file, please check"
-            "your config and try again[/red]"
+            f"[red]Config file missing key {missing_key}!\nError parsing config file, please"
+            " check your config and try again[/red]"
         )
         time.sleep(1)
         sys.exit(0)

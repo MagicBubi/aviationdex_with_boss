@@ -23,6 +23,7 @@ from ballsdex.core.models import (
     balls,
     specials,
 )
+from ballsdex.core.utils.utils import can_mention
 from ballsdex.settings import settings
 
 if TYPE_CHECKING:
@@ -65,12 +66,13 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 collectible=settings.collectible_name,
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
+                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
             )
 
             await interaction.followup.send(
                 slow_message,
                 ephemeral=True,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=await can_mention([player]),
             )
             return
 
@@ -86,11 +88,11 @@ class CountryballNamePrompt(Modal, title=f"Catch this {settings.collectible_name
                 ball=self.view.name,
                 collectibles=settings.plural_collectible_name,
                 wrong=wrong_name,
+                emoji=interaction.client.get_emoji(self.view.model.emoji_id),
             )
-
             await interaction.followup.send(
                 wrong_message,
-                allowed_mentions=discord.AllowedMentions(users=player.can_be_mentioned),
+                allowed_mentions=await can_mention([player]),
                 ephemeral=False,
             )
             return
@@ -147,6 +149,9 @@ class BallSpawnView(View):
         self.special: Special | None = None
         self.atk_bonus: int | None = None
         self.hp_bonus: int | None = None
+        self.og_id: int
+
+        self.catch_button.label = settings.catch_button_label
 
     async def interaction_check(self, interaction: discord.Interaction["BallsDexBot"], /) -> bool:
         return await interaction.client.blacklist_check(interaction)
@@ -185,6 +190,7 @@ class BallSpawnView(View):
 
         view = cls(bot, ball_instance.ball)
         view.ballinstance = ball_instance
+        view.og_id = ball_instance.player.discord_id
         return view
 
     @classmethod
@@ -260,6 +266,7 @@ class BallSpawnView(View):
                     collectible=settings.collectible_name,
                     ball=self.name,
                     collectibles=settings.plural_collectible_name,
+                    emoji=self.bot.get_emoji(self.model.emoji_id),
                 )
 
                 self.message = await channel.send(
@@ -269,9 +276,9 @@ class BallSpawnView(View):
                 )
                 return True
             else:
-                log.error("Missing permission to spawn ball in channel %s.", channel)
+                log.warning("Missing permission to spawn ball in channel %s.", channel)
         except discord.Forbidden:
-            log.error(f"Missing permission to spawn ball in channel {channel}.")
+            log.warning(f"Missing permission to spawn ball in channel {channel}.")
         except discord.HTTPException:
             log.error("Failed to spawn ball", exc_info=True)
         return False
@@ -295,8 +302,6 @@ class BallSpawnView(View):
             possible_names = (self.name.lower(), *self.model.catch_names.split(";"))
         else:
             possible_names = (self.name.lower(),)
-        if self.model.translations:
-            possible_names += tuple(x.lower() for x in self.model.translations.split(";"))
         cname = text.lower().strip()
         # Remove fancy unicode characters like ’ to replace to '
         cname = cname.replace("\u2019", "'")
@@ -344,6 +349,7 @@ class BallSpawnView(View):
             raise RuntimeError("This ball was already caught!")
         self.caught = True
         self.catch_button.disabled = True
+        caught_time = tortoise_now()
         player = player or (await Player.get_or_create(discord_id=user.id))[0]
         is_new = not await BallInstance.filter(player=player, ball=self.model).exists()
 
@@ -357,7 +363,7 @@ class BallSpawnView(View):
             self.ballinstance.trade_player = self.ballinstance.player
             self.ballinstance.player = player
             self.ballinstance.locked = None  # type: ignore
-            await self.ballinstance.save(update_fields=("player", "trade_player", "locked"))
+            await self.ballinstance.save(update_fields=("player_id", "trade_player_id", "locked"))
             return self.ballinstance, is_new
 
         # stat may vary by +/- 20% of base stat
@@ -386,6 +392,7 @@ class BallSpawnView(View):
             health_bonus=bonus_health,
             server_id=guild.id if guild else None,
             spawned_time=self.message.created_at,
+            catch_date=caught_time,
         )
 
         # logging and stats
@@ -424,6 +431,8 @@ class BallSpawnView(View):
                 f"This is a **new {settings.collectible_name}** "
                 "that has been added to your completion!"
             )
+        if self.ballinstance:
+            text += f"This {settings.collectible_name} was dropped by <@{self.og_id}>\n"
 
         caught_message = (
             random.choice(settings.caught_messages).format(
@@ -431,6 +440,7 @@ class BallSpawnView(View):
                 collectible=settings.collectible_name,
                 ball=self.name,
                 collectibles=settings.plural_collectible_name,
+                emoji=self.bot.get_emoji(self.model.emoji_id),
             )
             + " "
         )
